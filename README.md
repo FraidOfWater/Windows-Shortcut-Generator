@@ -13,7 +13,7 @@ Example:
 python gen_shortcut.py "C:\test.png" "C:\folder\" "test2.png"
 ```
 The py file acts as the command-line-interface. The .exe file does the work. The .cpp file is provided for code viewing.
-You can build the .cpp by installing visual studio (not code) and c++ build tools from there. Then you build by navigating to the .cpp script and using:
+You can build the .cpp by installing visual studio (not code) and c++ build tools from there. Then you build by navigating to the .cpp script and using (in x64 Native Tools Command Terminal):
 ```
 cl CreateShortcut.cpp ole32.lib shell32.lib
 ```
