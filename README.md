@@ -17,16 +17,23 @@ You can build the .cpp by installing visual studio (not code) and c++ build tool
 ```
 cl CreateShortcut.cpp ole32.lib shell32.lib
 ```
-
-There is also another file CreateShortcutBatch.exe and .cpp, which is activated with gen_shortcut_batch.py. It reads from a file "arguments.txt", and creates all shortcuts within. 
+If you need to create shortcuts programmatically in batches (calling CreateSortcut.exe repeatedly for each shortcut via python is pretty slow);
+Use CreateShortcutBatch.exe, which is activated with gen_shortcut_batch.py.
+It reads from a file "arguments.txt", and creates all shortcuts within.
 Each line has 4 arguments: Filepath, workingdirectory_of_filepath, shortcutdirectory, shortcutname.
+
+How to write the arguments.txt?
 Python example:
 ```
-arguments = f'"{os.path.realpath(path_to_file)}" "{os.path.dirname(path_to_file)}" "{shortcut_directory}" "{os.path.basename(path_to_file)}"'
-args.write(arguments + "\n")
+with open("arguments.txt", "a", encoding="utf-8") as args:
+  os.makedirs(shortcut_directory, exist_ok=True)
+  arguments = f'"{os.path.realpath(path_to_file)}" "{os.path.dirname(path_to_file)}" "{shortcut_directory}" "{os.path.basename(path_to_file)}"'
+  args.write(arguments + "\n")
 gen_shortcut.create_shortcut()
 ```
-lines in the arguments.txt would look like this:
+Note: The folders must already exist for shortcuts to be placed in them.
+
+Lines in the arguments.txt would look like this:
 ```
 "E:\directory\test.png" "E:\directory" "E:\director_two" "test (shortcut).png"
 "E:\directory\test2.png" "E:\directory" "E:\director_three" "test2 (shortcut).png"
