@@ -18,7 +18,7 @@ You can build the .cpp by installing visual studio (not code) and c++ build tool
 cl CreateShortcut.cpp ole32.lib shell32.lib
 ```
 If you need to create shortcuts programmatically in batches (calling CreateSortcut.exe repeatedly for each shortcut via python is pretty slow);
-Use CreateShortcutBatch.exe, which is activated with gen_shortcut_batch.py.
+Use CreateShortcut.exe from the batch folder, which is activated with gen_shortcut.py from the batch folder.
 It reads from a file "arguments.txt", and creates all shortcuts within.
 Each line has 4 arguments: Filepath, workingdirectory_of_filepath, shortcutdirectory, shortcutname.
 
