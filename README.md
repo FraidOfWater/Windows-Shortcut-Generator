@@ -23,7 +23,7 @@ It reads from a file "arguments.txt", and creates all shortcuts within.
 Each line has 4 arguments: Filepath, workingdirectory_of_filepath, shortcutdirectory, shortcutname.
 
 How to write the arguments.txt?
-Python example:
+Python example: (shortcut_directory was created using shortcut_directory = os.path.join())
 ```
 with open("arguments.txt", "a", encoding="utf-8") as args:
   os.makedirs(shortcut_directory, exist_ok=True)
