@@ -3,12 +3,11 @@ Command-line / python importable module to create windows shortcuts succesfully.
 
 I couldn't find a good python library to do this. All the existing ones fail somewhere (no support for longer paths, unicode), so this exists now.
 
-Tested to work upto 480 characters long paths.
 ## Why ##
 I couldn't find a reliable way to create shortcuts. 
 Either they would break because of strange path-limits or they'd wouldn't even support unicode characters.
 I noticed if I manually used the context menu to "Create shortcut" on an image, it would just do it, every time, even with ridiculously long filepaths and filenames.
-None of the libraries in python could do this, but it was obvious it was possible. This should work. (Works up to 480 character paths, for some reaason it is just a bit shy of the target...)
+None of the libraries in python could do this, but it was obvious it was possible. This should work.
 It uses C++ libraries to interact with windows, but uses python as an interface. Mostly used: "https://www.codeproject.com/articles/11467/how-to-create-short-cuts-link-files".
 ### Features ###
 1. Ignore path limits.
