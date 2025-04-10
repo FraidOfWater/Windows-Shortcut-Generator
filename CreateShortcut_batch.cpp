@@ -1,9 +1,12 @@
 #include <windows.h>
-#include <shobjidl.h>
-#include <shlobj.h>
-#include <objbase.h>
-#include <strsafe.h>
+#include <shobjidl.h>    // For IShellLinkW, CLSID_ShellLink, IID_IShellLinkW
+#include <shlobj.h>      // For SHParseDisplayName, SHGetFolderPathW (or SHGetKnownFolderPath)
+#include <objbase.h>     // For COM functions and CoTaskMemFree
+#include <strsafe.h>     // For StringCchPrintfW
 #include <iostream>
+#include <shlwapi.h>     // PathIsUNCW, etc.
+
+#pragma comment(lib, "shlwapi.lib")
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -19,26 +22,22 @@ HRESULT SetShortcutTargetByPIDL(IShellLinkW* pShellLink, const wchar_t* longTarg
 
     LPITEMIDLIST pidl = nullptr;
     SFGAOF sfgao = 0;
+
+    // SHParseDisplayName can parse "\\?\" long paths
     HRESULT hr = SHParseDisplayName(longTargetPath, NULL, &pidl, 0, &sfgao);
-    if (FAILED(hr))
+    if (SUCCEEDED(hr) && pidl != nullptr)
     {
-        std::wcerr << L"SHParseDisplayName failed for path: " << longTargetPath
-                   << L" | HRESULT: 0x" << std::hex << hr << std::endl;
-    }
-    else if (pidl == nullptr)
-    {
-        std::wcerr << L"SHParseDisplayName returned null PIDL for: " << longTargetPath << std::endl;
-        hr = E_FAIL;
+        hr = pShellLink->SetIDList(pidl);  // Set the target using PIDL
+        CoTaskMemFree(pidl);               // Always free the PIDL
     }
     else
     {
-        hr = pShellLink->SetIDList(pidl);
-        CoTaskMemFree(pidl);
+        std::wcerr << L"SHParseDisplayName failed for: " << longTargetPath
+                   << L" (HRESULT: 0x" << std::hex << hr << L")" << std::endl;
     }
 
     return hr;
 }
-
 
 // Helper to parse a quoted line into 4 strings
 bool ParseLine(const std::wstring& line, std::vector<std::wstring>& outArgs)
@@ -75,10 +74,9 @@ int wmain()
     std::ios_base::sync_with_stdio(false);
     std::wcout.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
 
-
-
     std::wifstream inputFile("arguments.txt");
-    std::ios_base::sync_with_stdio(false);inputFile.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
+    std::ios_base::sync_with_stdio(false);
+    inputFile.imbue(std::locale(std::locale(), new std::codecvt_utf8<wchar_t>));
 
     if (!inputFile)
     {
@@ -86,10 +84,10 @@ int wmain()
         return 1;
     }
 
-    HRESULT hr = CoInitialize(NULL);
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
     if (FAILED(hr))
     {
-        std::wcerr << L"CoInitialize failed: 0x" << std::hex << hr << std::endl;
+        std::wcerr << L"CoInitializeEx failed: 0x" << std::hex << hr << std::endl;
         return 1;
     }
 
@@ -118,17 +116,21 @@ int wmain()
         if (FAILED(hr))
         {
             std::wcerr << L"CoCreateInstance failed: 0x" << std::hex << hr << std::endl;
-            continue;
+        CoUninitialize();
+        return 1;
         }
 
+    // Use PIDL-based target setting
         hr = SetShortcutTargetByPIDL(pShellLink, longTargetPath);
         if (FAILED(hr))
         {
-            std::wcerr << L"SetShortcutTargetByPIDL failed: 0x" << std::hex << hr << std::endl;
+        std::wcerr << L"Failed to set target by PIDL. HRESULT: 0x" << std::hex << hr << std::endl;
             pShellLink->Release();
-            continue;
+        CoUninitialize();
+        return 1;
         }
 
+    // Set working dir and optional metadata
         pShellLink->SetWorkingDirectory(workingDirectory);
         pShellLink->SetDescription(L"My Custom Long Path Shortcut");
 
@@ -136,34 +138,34 @@ int wmain()
         hr = pShellLink->QueryInterface(IID_IPersistFile, reinterpret_cast<void**>(&pPersistFile));
         if (SUCCEEDED(hr))
         {
-            wchar_t lnkPath[MAX_PATH] = {0};
-            hr = StringCchPrintfW(lnkPath, MAX_PATH, L"%s\\%s.lnk", shortcutDirectory, shortcutName);
+        wchar_t lnkPath[32768] = {0};  // Maximum Windows path length with \\?\ prefix
+        hr = StringCchPrintfW(lnkPath, ARRAYSIZE(lnkPath), L"%s\\%s.lnk", shortcutDirectory, shortcutName);
+
             if (SUCCEEDED(hr))
             {
                 hr = pPersistFile->Save(lnkPath, TRUE);
                 if (SUCCEEDED(hr))
                 {
-                    std::wcout << L"Shortcut created successfully at: " << lnkPath << std::endl;
-                }
-                else
-                {
-                    std::wcerr << L"Save failed: 0x" << std::hex << hr << std::endl;
-                }
+                std::wcout << L"Shortcut successfully created at: " << lnkPath << std::endl;
             }
             else
             {
-                std::wcerr << L"StringCchPrintfW failed: 0x" << std::hex << hr << std::endl;
+                std::wcerr << L"Failed to save shortcut. HRESULT: 0x" << std::hex << hr << std::endl;
             }
-            pPersistFile->Release();
         }
         else
         {
-            std::wcerr << L"QueryInterface failed: 0x" << std::hex << hr << std::endl;
+            std::wcerr << L"StringCchPrintfW failed. HRESULT: 0x" << std::hex << hr << std::endl;
+        }
+        pPersistFile->Release();
+    }
+    else
+    {
+        std::wcerr << L"QueryInterface for IPersistFile failed: 0x" << std::hex << hr << std::endl;
         }
 
         pShellLink->Release();
     }
-
     CoUninitialize();
     return 0;
 }
