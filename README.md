@@ -36,6 +36,7 @@ gen_shortcut.create_shortcut(arguments, info=True, silent=False)
 ```
 * verbose = whether to print verbose.
 * silent = whether to ignore errors.
+* ex. [(os.path.realpath(r"C:\test.png"), os.path.realpath(r"C:\shortcuts\test.png")]
 ## Building and editing ##
 1. You may edit the .cpp file, which is used to compile the .exe (C++ code)
 2. Build .cpp using "x64 Native Tools Command Terminal" from visual studio.
@@ -43,4 +44,5 @@ gen_shortcut.create_shortcut(arguments, info=True, silent=False)
 cl CreateShortcut.cpp ole32.lib shell32.lib
 ```
 
-Tips: If you are checking the existence of a shortcut with python, remember to add the .lnk file extension at the end.
+Tips: 
+* If you are checking the existence of a shortcut with python, remember to add the .lnk file extension at the end.
